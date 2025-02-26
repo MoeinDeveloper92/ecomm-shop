@@ -1,12 +1,13 @@
 import { ClerkProvider } from '@clerk/nextjs';
-import './globals.css';
+import '../globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Metadata } from 'next';
 import localFont from 'next/font/local';
 
+//Mount the font from font folder
 const raleway = localFont({
-  src: './fonts/raleway.woff2',
+  src: '../fonts/raleway.woff2',
   variable: '--font-raleway',
   weight: '100 900',
 });

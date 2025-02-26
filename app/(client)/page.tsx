@@ -1,5 +1,6 @@
 import Container from '@/components/Container';
 import HomeBanner from '@/components/HomeBanner';
+import ProductsGrid from '@/components/ProductsGrid';
 import React from 'react';
 
 const page = () => {
@@ -7,6 +8,7 @@ const page = () => {
     <div>
       <Container className="py-10">
         <HomeBanner />
+        <ProductsGrid />
       </Container>
     </div>
   );

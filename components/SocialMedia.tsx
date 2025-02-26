@@ -52,7 +52,8 @@ const SocialMedia = ({ className, iconClassName, tooltipClassName }: Props) => {
             <TooltipTrigger asChild>
               <Link
                 className={cn(
-                  'p-2 border rounded-full hover:text-white hoverEffect'
+                  'p-2 border rounded-full hover:text-white hoverEffect',
+                  iconClassName
                 )}
                 href={item?.href}
                 target="__blank"
@@ -62,7 +63,10 @@ const SocialMedia = ({ className, iconClassName, tooltipClassName }: Props) => {
               </Link>
             </TooltipTrigger>
             <TooltipContent
-              className={cn('text-darkColor font-semibold bg-white')}
+              className={cn(
+                'text-darkColor font-semibold bg-white',
+                tooltipClassName
+              )}
             >
               {item.title}
             </TooltipContent>

@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typegen": "npx sanity schema extract --enforce-required-fields && npx sanity typegen generate"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.12.0",
@@ -19,14 +20,20 @@
     "@radix-ui/react-separator": "^1.1.2",
     "@radix-ui/react-slot": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.8",
+    "@sanity/icons": "^3.6.0",
+    "@sanity/image-url": "^1.1.0",
+    "@sanity/vision": "^3.77.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "lucide-react": "^0.476.0",
     "motion": "^12.4.7",
     "next": "15.1.7",
+    "next-sanity": "^9.8.60",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "sanity": "^3.77.2",
+    "styled-components": "^6.1.15",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7"
   },
