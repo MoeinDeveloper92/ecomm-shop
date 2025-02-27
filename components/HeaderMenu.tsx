@@ -1,25 +1,38 @@
 'use client';
-import { headerData } from '@/constants';
+import { CATEGORIES_QUERYResult } from '@/sanity.types';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React from 'react';
 
-const HeaderMenu = () => {
+const HeaderMenu = ({ categories }: { categories: CATEGORIES_QUERYResult }) => {
   const pathName = usePathname();
 
   return (
     <div className="hidden md:inline-flex  basis-1/3 items-center gap-5 text-sm capitalize font-semibold">
-      {headerData.map((item, i) => (
+      <Link
+        className="hover:text-darkColor hoverEffect relative group"
+        href={'/'}
+      >
+        Home
+        <span
+          className={`absolute -bottom-0.5 left-0 w-0 h-0.5 bg-darkColor hoverEffect group-hover:w-full origin-right ${
+            pathName === '/' ? 'w-full' : 'w-0'
+          }`}
+        />
+      </Link>
+      {categories.map((category) => (
         <Link
-          className={`hover:text-darkColor hoverEffect relative
-          group ${pathName === item?.href && 'text-darkColor'}`}
-          key={i}
-          href={item.href}
+          className={`hover:text-darkColor text-nowrap hoverEffect relative
+          group ${pathName === category?.slug?.current && 'text-darkColor'}`}
+          key={category._id}
+          href={`/category/${category.slug?.current}`}
         >
-          {item.title}
+          {category.title}
           <span
             className={`absolute -bottom-0.5 left-0 w-0 h-0.5 bg-darkColor hoverEffect group-hover:w-full origin-right ${
-              pathName === item?.href ? 'w-full' : 'w-0'
+              pathName === '/category/' + category?.slug?.current
+                ? 'w-full'
+                : 'w-0'
             }`}
           />
         </Link>

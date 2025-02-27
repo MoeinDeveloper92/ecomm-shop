@@ -1,0 +1,9 @@
+version: "3.8"
+services:
+  front:
+    image: ${"IMAGE%$@/MOEIN/#$!"}
+    restart: always
+    ports:
+      - ${App_port:-3000}:3000
+    env_file:
+      - .env

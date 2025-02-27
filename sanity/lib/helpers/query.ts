@@ -22,3 +22,18 @@ export const getProductBySlug = async (
     console.error('ERROR FETCHING PRODUCT BY SLUG', error);
   }
 };
+
+export const getAllCategories = async () => {
+  const CATEGORIES_QUERY = defineQuery(
+    `*[_type == "category"] | order(name desc)`
+  );
+  try {
+    const categories = await sanityFetch({
+      query: CATEGORIES_QUERY,
+    });
+    return categories.data || [];
+  } catch (error) {
+    console.error('ERROR WHILE FETCHING DATA FROM BACKEND', error);
+    return [];
+  }
+};

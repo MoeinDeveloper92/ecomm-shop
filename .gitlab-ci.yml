@@ -1,0 +1,145 @@
+default:
+  image: docker:latest
+
+variables:
+  DOCKER_BUILDKIT: 1
+  IMAGE_BASE_NAME: $CI_REGISTRY_IMAGE
+  IMAGE_BASE_TAG: $IMAGE_BASE_NAME:cache-base-$CI_COMMIT_REF_SLUG
+  IMAGE_DEPS_CACHE_TAG: $IMAGE_BASE_NAME:cache-deps-$CI_COMMIT_REF_SLUG
+  IMAGE_NAME: $IMAGE_BASE_NAME:$CI_COMMIT_BRANCH
+  IMAGE_RELEASE_NAME: $IMAGE_BASE_NAME:latest
+  DEVELOPMENT_IMAGE_RELEASE_NAME: $IMAGE_BASE_NAME:dev_latest
+  PROJ_GIT_CLONE_URL_AUTH: "https://gitlab-ci-token:$CI_JOB_TOKEN@${CI_PROJECT_URL:8}.git"
+
+.container_registry_login: &container_registry_login
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+before_script:
+  - *container_registry_login
+
+stages:
+  - build
+  - deploy
+
+build-base-image:
+  stage: build
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" ||  $CI_COMMIT_BRANCH == "develop"
+  script:
+    - >
+      docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --target base_image 
+      --cache-from $IMAGE_BASE_TAG -t $IMAGE_BASE_TAG .
+      
+      docker push $IMAGE_BASE_TAG
+
+
+install_dev_dependencies:
+  stage: build
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" ||  $CI_COMMIT_BRANCH == "develop"
+  needs:
+    - build-base-image
+  script:
+    - >
+      docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --target dev_dependencies 
+      --cache-from $IMAGE_DEPS_CACHE_TAG -t $IMAGE_DEPS_CACHE_TAG .
+      
+      docker push $IMAGE_DEPS_CACHE_TAG
+
+build:
+  stage: build
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" ||  $CI_COMMIT_BRANCH == "develop"
+  needs:
+    - install_dev_dependencies
+  script:
+    - >
+      docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --target build 
+      --cache-from $IMAGE_DEPS_CACHE_TAG -t $IMAGE_DEPS_CACHE_TAG .
+
+      docker push $IMAGE_DEPS_CACHE_TAG
+
+build_docker_image:
+  stage: deploy
+  only:
+    - main
+    - develop
+  script:
+    - >
+      docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --target run --cache-from $IMAGE_NAME -t $IMAGE_NAME .
+      
+      docker push $IMAGE_NAME
+
+release_dev_image:
+  stage: deploy
+  only:
+    - develop
+  needs:
+    - build_docker_image
+  script:
+    - docker pull $IMAGE_NAME
+    - docker tag $IMAGE_NAME $DEVELOPMENT_IMAGE_RELEASE_NAME
+    - docker push $DEVELOPMENT_IMAGE_RELEASE_NAME
+
+deploy_dev_image:
+  image: alpine:latest
+  stage: deploy
+  needs:
+    - release_dev_image
+  only:
+    - develop
+  environment:
+    name: development
+    url: https://dev.petagpt.de
+  before_script:
+    - chmod 600 $DEVELOPMENT_SSH_KEY
+    - apk add openssh-client
+  script:
+    - ssh -o StrictHostKeyChecking=no -i $DEVELOPMENT_SSH_KEY $DEVELOPMENT_USER@$DEVELOPMENT_HOST "
+        mkdir -p ${CI_PROJECT_NAME} && cd ${CI_PROJECT_NAME} &&
+        docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
+        docker compose down ;
+        docker image rm $DEVELOPMENT_IMAGE_RELEASE_NAME ;
+        rm -f docker-compose.yaml ;
+        echo VITE_REACT_BACKEND_URL=https://api2.petagpt.de > .env &&
+        echo IMAGE=${DEVELOPMENT_IMAGE_RELEASE_NAME} >> .env &&
+        curl -H "Private-Token:$GIT_DEPLOY_PASS"  -o docker-compose.yaml -L "$CI_API_V4_URL"/projects/$CI_PROJECT_ID/repository/files/docker-compose.yaml/raw?ref=develop"" &&
+        docker compose up -d"
+
+release_image:
+  stage: deploy
+  only:
+    - main
+  needs:
+    - build_docker_image
+  script:
+    - docker pull $IMAGE_NAME
+    - docker tag $IMAGE_NAME $IMAGE_RELEASE_NAME
+    - docker push $IMAGE_RELEASE_NAME
+
+
+deploy:
+  image: alpine:latest
+  stage: deploy
+  needs:
+    - release_image
+  only:
+    - main
+  environment:
+    name: production
+    url: https://petagpt.de
+  before_script:
+    - chmod 600 $DEPLOY_SSH_KEY
+    - apk add openssh-client
+  script:
+    - ssh -o StrictHostKeyChecking=no -i $DEPLOY_SSH_KEY $DEPLOY_SSH_USER@$DEPLOY_HOST "
+        mkdir -p ${CI_PROJECT_NAME} && cd ${CI_PROJECT_NAME} &&
+        docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
+        docker compose down ;
+        docker image rm $IMAGE_RELEASE_NAME ;
+        rm -f docker-compose.yaml ;
+        echo VITE_REACT_BACKEND_URL=https://api.petagpt.de > .env &&
+        echo IMAGE=${IMAGE_RELEASE_NAME} >> .env &&
+        curl -H "Private-Token:$GIT_DEPLOY_PASS"  -o docker-compose.yaml -L "$CI_API_V4_URL"/projects/$CI_PROJECT_ID/repository/files/docker-compose.yaml/raw?ref=main"" &&
+        docker compose up -d 
+        "
