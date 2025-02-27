@@ -10,6 +10,7 @@ import { ClerkLoaded, SignedIn, SignInButton, UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { ListOrdered } from 'lucide-react';
 
+//we shoud Leave it as Server side since we want to take the user thorugh server actions
 const Header = async () => {
   const user = await currentUser();
 

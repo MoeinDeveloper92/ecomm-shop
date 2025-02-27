@@ -19,7 +19,7 @@ import AddToCartButton from './AddToCartButton';
 
 const Searchbar = () => {
   const [search, setSearch] = useState<string>('');
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [showSearch, setShowSearch] = useState<boolean>(false);
 
@@ -93,7 +93,7 @@ const Searchbar = () => {
               products.map((product: Product) => (
                 <div
                   key={product._id}
-                  className="bg-white overflow-hidden border-b last:border-b-0 "
+                  className="bg-white overflow-hidden border-b last:border-b-0  "
                 >
                   <div className="flex items-center p-1">
                     <Link
