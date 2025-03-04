@@ -9,7 +9,7 @@ variables:
   IMAGE_NAME: $IMAGE_BASE_NAME:$CI_COMMIT_BRANCH
   IMAGE_RELEASE_NAME: $IMAGE_BASE_NAME:latest
   DEVELOPMENT_IMAGE_RELEASE_NAME: $IMAGE_BASE_NAME:dev_latest
-  PROJ_GIT_CLONE_URL_AUTH: "https://gitlab-ci-token:$CI_JOB_TOKEN@${CI_PROJECT_URL:8}.git"
+  PROJ_GIT_CLONE_URL_AUTH: 'https://gitlab-ci-token:$CI_JOB_TOKEN@${CI_PROJECT_URL:8}.git'
 
 .container_registry_login: &container_registry_login
   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -29,9 +29,8 @@ build-base-image:
     - >
       docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --target base_image 
       --cache-from $IMAGE_BASE_TAG -t $IMAGE_BASE_TAG .
-      
-      docker push $IMAGE_BASE_TAG
 
+      docker push $IMAGE_BASE_TAG
 
 install_dev_dependencies:
   stage: build
@@ -43,7 +42,7 @@ install_dev_dependencies:
     - >
       docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --target dev_dependencies 
       --cache-from $IMAGE_DEPS_CACHE_TAG -t $IMAGE_DEPS_CACHE_TAG .
-      
+
       docker push $IMAGE_DEPS_CACHE_TAG
 
 build:
@@ -67,7 +66,7 @@ build_docker_image:
   script:
     - >
       docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --target run --cache-from $IMAGE_NAME -t $IMAGE_NAME .
-      
+
       docker push $IMAGE_NAME
 
 release_dev_image:
@@ -96,15 +95,15 @@ deploy_dev_image:
     - apk add openssh-client
   script:
     - ssh -o StrictHostKeyChecking=no -i $DEVELOPMENT_SSH_KEY $DEVELOPMENT_USER@$DEVELOPMENT_HOST "
-        mkdir -p ${CI_PROJECT_NAME} && cd ${CI_PROJECT_NAME} &&
-        docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
-        docker compose down ;
-        docker image rm $DEVELOPMENT_IMAGE_RELEASE_NAME ;
-        rm -f docker-compose.yaml ;
-        echo VITE_REACT_BACKEND_URL=https://api2.petagpt.de > .env &&
-        echo IMAGE=${DEVELOPMENT_IMAGE_RELEASE_NAME} >> .env &&
-        curl -H "Private-Token:$GIT_DEPLOY_PASS"  -o docker-compose.yaml -L "$CI_API_V4_URL"/projects/$CI_PROJECT_ID/repository/files/docker-compose.yaml/raw?ref=develop"" &&
-        docker compose up -d"
+      mkdir -p ${CI_PROJECT_NAME} && cd ${CI_PROJECT_NAME} &&
+      docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
+      docker compose down ;
+      docker image rm $DEVELOPMENT_IMAGE_RELEASE_NAME ;
+      rm -f docker-compose.yaml ;
+      echo VITE_REACT_BACKEND_URL=https://api2.petagpt.de > .env &&
+      echo IMAGE=${DEVELOPMENT_IMAGE_RELEASE_NAME} >> .env &&
+      curl -H "Private-Token:$GIT_DEPLOY_PASS"  -o docker-compose.yaml -L "$CI_API_V4_URL"/projects/$CI_PROJECT_ID/repository/files/docker-compose.yaml/raw?ref=develop"" &&
+      docker compose up -d"
 
 release_image:
   stage: deploy
@@ -116,7 +115,6 @@ release_image:
     - docker pull $IMAGE_NAME
     - docker tag $IMAGE_NAME $IMAGE_RELEASE_NAME
     - docker push $IMAGE_RELEASE_NAME
-
 
 deploy:
   image: alpine:latest
@@ -133,13 +131,13 @@ deploy:
     - apk add openssh-client
   script:
     - ssh -o StrictHostKeyChecking=no -i $DEPLOY_SSH_KEY $DEPLOY_SSH_USER@$DEPLOY_HOST "
-        mkdir -p ${CI_PROJECT_NAME} && cd ${CI_PROJECT_NAME} &&
-        docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
-        docker compose down ;
-        docker image rm $IMAGE_RELEASE_NAME ;
-        rm -f docker-compose.yaml ;
-        echo VITE_REACT_BACKEND_URL=https://api.petagpt.de > .env &&
-        echo IMAGE=${IMAGE_RELEASE_NAME} >> .env &&
-        curl -H "Private-Token:$GIT_DEPLOY_PASS"  -o docker-compose.yaml -L "$CI_API_V4_URL"/projects/$CI_PROJECT_ID/repository/files/docker-compose.yaml/raw?ref=main"" &&
-        docker compose up -d 
-        "
+      mkdir -p ${CI_PROJECT_NAME} && cd ${CI_PROJECT_NAME} &&
+      docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
+      docker compose down ;
+      docker image rm $IMAGE_RELEASE_NAME ;
+      rm -f docker-compose.yaml ;
+      echo VITE_REACT_BACKEND_URL=https://api.petagpt.de > .env &&
+      echo IMAGE=${IMAGE_RELEASE_NAME} >> .env &&
+      curl -H "Private-Token:$GIT_DEPLOY_PASS"  -o docker-compose.yaml -L "$CI_API_V4_URL"/projects/$CI_PROJECT_ID/repository/files/docker-compose.yaml/raw?ref=main"" &&
+      docker compose up -d
+      "
